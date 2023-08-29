@@ -5,7 +5,7 @@
 #include <string.h>
 #include <math.h>
 
-const MAT_1X6(joint_t, DH_PARAMS) = {
+static MAT_1X6(joint_t, DH_PARAMS) = {
   {+0.0, +0.0,   +0.21,  +M_PI_2},
   {+0.0, -0.8,   +0.193, +0.0},
   {+0.0, -0.598, +0.16,  +0.0},
@@ -21,7 +21,7 @@ void mat_identify(MAT_4x4(mat)) {
     }
 }
 
-void mat_mul(const MAT_4x4(mat_1), const MAT_4x4(mat_2), MAT_4x4(result)) {
+void mat_mul(MAT_4x4(mat_1), MAT_4x4(mat_2), MAT_4x4(result)) {
     memset(result, 0, sizeof(double) * MATRIX_DIMENSION * MATRIX_DIMENSION);
     for (int i = 0; i < MATRIX_DIMENSION; ++i) {
         for (int j = 0; j < MATRIX_DIMENSION; ++j) {
@@ -32,7 +32,7 @@ void mat_mul(const MAT_4x4(mat_1), const MAT_4x4(mat_2), MAT_4x4(result)) {
     }
 }
 
-void set_dh_params(const joint_t params, MAT_4x4(result)) {
+void compute_dh_transformation(const joint_t params, MAT_4x4(result)) {
     const double cTheta = cos(params.theta);
     const double sTheta = sin(params.theta);
     const double cAlpha = cos(params.alpha);
@@ -59,14 +59,18 @@ void set_dh_params(const joint_t params, MAT_4x4(result)) {
     result[3][3] = 1.0;
 }
 
-point_t get_coord_after_transform(const MAT_1X6(double, theta)) {
+point_t get_coord_after_transform(const MAT_1X6(const double, theta)) {
     MAT_4x4(base);
     MAT_4x4(result);
     MAT_4x4(transform);
     mat_identify(base);
 
+    for (int i = 0; i < HAND_DIMENSION; ++i) {
+        DH_PARAMS[i].theta = theta[i];
+    }
+
     for (int stage = 0; stage < HAND_DIMENSION; ++stage) {
-        set_dh_params(DH_PARAMS[stage], transform);
+        compute_dh_transformation(DH_PARAMS[stage], transform);
         mat_mul(base, transform, result);
         memcpy(base, result, sizeof(double) * MATRIX_DIMENSION * MATRIX_DIMENSION);
     }
@@ -76,10 +80,4 @@ point_t get_coord_after_transform(const MAT_1X6(double, theta)) {
 
 void print_point(const point_t point) {
     printf("End Effector Position: (%lf, %lf, %lf)\n", point.x, point.y, point.z);
-}
-
-int main(int argc, char** argv) {
-    MAT_1X6(double, theta) = {10.0, -50.0, -60.0, 90.0, 50.0, 0.0};
-    print_point(get_coord_after_transform(theta));
-    return 0;
 }
