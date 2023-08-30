@@ -2,7 +2,6 @@
 #define MECHATRONICARMANALYZER_MODEL_H
 
 #define POINT_DIMENSION 6
-#define Vector1x6(T, V) T V[POINT_DIMENSION]
 
 struct Point {
   double x;
@@ -11,6 +10,6 @@ struct Point {
 };
 typedef struct Point point_t;
 
-point_t get_end_effector_position(Vector1x6(const double, theta));
+point_t get_end_effector_position(const double theta[POINT_DIMENSION]);
 
 #endif //MECHATRONICARMANALYZER_MODEL_H
